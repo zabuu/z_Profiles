@@ -1,0 +1,11 @@
+/native/build/
+/dist/
+__pycache__/
+*.pyc
+*.obj
+*.pdb
+*.exp
+*.lib
+*.log
+*.tmp
+/.test-data/
