@@ -4,13 +4,22 @@ Local account profiles for the audited Windows 10/11 x86 OctoWoW / WoW 1.12.1.58
 
 **0.1.0 is an experimental first release. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
 
+## Installation
+
+1. Fully exit WoW.
+2. Put the addon folder in `Interface/AddOns/z_Profiles`.
+3. Copy **[zProfilesNative.dll](bin/zProfilesNative.dll)** from the addon's `bin` folder into your **main WoW folder**, beside `WoW.exe` and `VanillaFixes.exe`. The destination is `<WoW folder>/zProfilesNative.dll`.
+4. Open `dlls.txt` in that same main WoW folder, or create it if it is missing. Add this as the **first line**, keeping your other DLL entries below it:
+
+   ```text
+   zProfilesNative.dll
+   ```
+
+5. Start the game through **VanillaFixes.exe** so it loads `zProfilesNative.dll`. Starting `WoW.exe` directly does not load this protection.
+
 ## Use
 
-1. Put this repository in `Interface/AddOns/z_Profiles`.
-2. Fully exit WoW. Run `Install.ps1` from PowerShell. It verifies the packaged DLL and supported client, copies the DLL beside the game, and places it first in `dlls.txt`. It backs up the previous loader list and any existing zProfiles DLL.
-3. Start with `Launch.ps1`, or the configured VanillaFixes launcher. Starting `WoW.exe` directly does not load this protection.
-4. Enable the addon and open `/zp` or `/zprofiles`.
-5. Select an account and choose **Isolate**, then fully exit and restart the client. Until that restart, the panel continues to show **Active: default**.
+Enable the zProfiles addon, log in to a character, and open `/zp` or `/zprofiles`. Select an account and choose **Isolate**, then fully exit and restart the client. Until that restart, the panel continues to show **Active: default**.
 
 Every unconfigured account uses **Default**. Default accounts keep normal file and server synchronization behavior. Choosing **Use Default** also takes effect only after a full restart: an isolated session is never uploaded by opting out in the middle of play.
 
@@ -74,6 +83,6 @@ python .\tests\audit_client.py 'C:\Path\To\WoW.exe'
 .\Package.ps1
 ```
 
-The supported executable SHA-256 is `d8fc8b43006118b9e51572581dad00db498acef100b45a75d01d0e3791eb63e7`. The installer pins this image; the DLL additionally verifies PE metadata and unmodified hook entries in memory. It must initialize before other DLLs hook those entries.
+The supported executable SHA-256 is `d8fc8b43006118b9e51572581dad00db498acef100b45a75d01d0e3791eb63e7`. `zProfilesNative.dll` verifies PE metadata and unmodified hook entries in memory. Its entry must be first in `dlls.txt` so it initializes before other DLLs hook those entries.
 
 See [native design](docs/DESIGN.md) and [validation / remaining live checks](docs/VALIDATION.md). MinHook's BSD license is included with its source. No Blizzard binary or account data is included.
