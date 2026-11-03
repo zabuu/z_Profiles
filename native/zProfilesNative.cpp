@@ -1,5 +1,6 @@
 #include "FileHooks.h"
 #include "Packets.h"
+#include "Setups.h"
 #include <memory>
 
 namespace {
@@ -177,19 +178,27 @@ zp::Session *CurrentSession() {
   auto found = sessions.find(currentConnection);
   return found == sessions.end() ? nullptr : &found->second;
 }
+bool ReplayReady(const zp::Session &session) {
+  return replayConnection == currentConnection && replayGuid == session.guid && replayPrototype.vtable;
+}
+bool DeliverBars(zp::Session &session, const zp::Bars &bars) {
+  if (!ReplayReady(session)) return false;
+  std::array<uint8_t, 2 + sizeof(zp::Bars)> bytes{};
+  uint16_t opcode = static_cast<uint16_t>(zp::ActionButtons);
+  std::memcpy(bytes.data(), &opcode, 2);
+  std::memcpy(bytes.data() + 2, bars.data(), sizeof(bars));
+  Packet packet = replayPrototype;
+  packet.buffer = bytes.data(); packet.base = packet.read = 0;
+  packet.allocated = packet.size = static_cast<uint32_t>(bytes.size());
+  session.bars = bars; session.ready = true;
+  originalDispatch(replayConnection, nullptr, replayArgument, &packet);
+  return true;
+}
 bool Replay(zp::Session &session) {
   if (replayConnection != currentConnection || replayGuid != session.guid || !replayPrototype.vtable) return false;
   zp::Bars official{};
   if (!store->LoadBars(session.account, session.guid, true, official)) return false;
-  std::array<uint8_t, 2 + sizeof(zp::Bars)> bytes{};
-  uint16_t opcode = static_cast<uint16_t>(zp::ActionButtons);
-  std::memcpy(bytes.data(), &opcode, 2);
-  std::memcpy(bytes.data() + 2, official.data(), sizeof(official));
-  Packet packet = replayPrototype;
-  packet.buffer = bytes.data(); packet.base = packet.read = 0;
-  packet.allocated = packet.size = static_cast<uint32_t>(bytes.size());
-  session.bars = official; session.ready = true;
-  originalDispatch(replayConnection, nullptr, replayArgument, &packet);
+  if (!DeliverBars(session, official)) return false;
   auto flagsFile = store->Journal(session.account, session.guid, true); flagsFile += L".toggles";
   {
     zp::Bypass guard;
@@ -200,6 +209,30 @@ bool Replay(zp::Session &session) {
     }
   }
   return true;
+}
+void ApplySetup(zp::Session &session, const zp::Setup &setup) {
+  uint8_t previousFlags = 0;
+  if (!ReplayReady(session) || !PlayerFlags(session.guid, &previousFlags, false))
+    throw std::runtime_error("Live action bars are not available. Log out and back in before applying a setup.");
+  const auto previousBars = session.bars;
+  auto flagsFile = store->Journal(session.account, session.guid, false); flagsFile += L".toggles";
+  try {
+    store->SaveBars(session.account, session.guid, false, setup.bars);
+    zp::AtomicWrite(flagsFile, &setup.toggles, 1);
+    auto flags = setup.toggles;
+    if (!PlayerFlags(session.guid, &flags, true)) throw std::runtime_error("Cannot update live bar visibility.");
+    if (!DeliverBars(session, setup.bars)) throw std::runtime_error("Cannot update live action bars.");
+    session.toggles = setup.toggles;
+  } catch (...) {
+    try {
+      store->SaveBars(session.account, session.guid, false, previousBars);
+      zp::AtomicWrite(flagsFile, &previousFlags, 1);
+      PlayerFlags(session.guid, &previousFlags, true);
+      DeliverBars(session, previousBars);
+      session.toggles = previousFlags;
+    } catch (...) { Fault("Setup rollback failed. Use Revert before making further changes."); }
+    throw;
+  }
 }
 std::string Argument(void *L, int index) {
   if (At<LuaType>(0x006F3400)(L, index) != 4) return {};
@@ -215,9 +248,51 @@ int __fastcall Bridge(void *L) {
   try {
     auto command = Argument(L, 1);
     if (command == "version") { Number(L, 1); return 1; }
+    if (command == "setupVersion") { Number(L, 1); return 1; }
     std::lock_guard<std::recursive_mutex> lock(store->mutex);
     auto current = CurrentSession();
     auto account = current ? current->account : CurrentAccount();
+    if (command == "setups" || command == "saveSetup" || command == "updateSetup" || command == "saveSetupUndo" ||
+        command == "setupBindings" || command == "setupUndoBindings" || command == "applySetup" || command == "applySetupUndo" ||
+        command == "renameSetup" || command == "deleteSetup") {
+      if (!current || !store->Isolated(account) || !current->guid || !current->ready || !current->togglesSeeded)
+        return Reply(L, false, "Bar setups require an active isolated character. Choose Isolate in /zp and restart WoW.");
+      if (!store->muted.empty() || !store->problem.empty()) return Reply(L, false, "Resolve the profile error or finish reloading before using setups.");
+      const bool undo = command == "saveSetupUndo" || command == "setupUndoBindings" || command == "applySetupUndo";
+      zp::Bypass guard;
+      if (command == "setups") {
+        std::string names;
+        for (const auto &name : zp::ListSetups(*store, account, current->guid)) names += zp::Utf8(name) + "\n";
+        Text(L, names);
+        Number(L, zp::fs::exists(zp::SetupPath(*store, account, current->guid, L"", true)) ? 1 : 0);
+        return 2;
+      }
+      auto name = zp::Wide(Argument(L, 2));
+      auto path = zp::SetupPath(*store, account, current->guid, name, undo);
+      if (command == "saveSetup" || command == "updateSetup" || command == "saveSetupUndo") {
+        if (command == "saveSetup" && zp::fs::exists(path)) return Reply(L, false, "That name already exists. Select it and use Update, or choose another name.");
+        if (command == "updateSetup" && !zp::fs::exists(path)) return Reply(L, false, "The selected setup no longer exists.");
+        zp::Setup setup{current->bars, current->toggles, Argument(L, 3)};
+        zp::WriteSetup(*store, path, setup);
+        return Reply(L, true, undo ? "Undo saved." : "Saved setup: " + zp::Utf8(name));
+      }
+      if (command == "setupBindings" || command == "setupUndoBindings") {
+        auto setup = zp::ReadSetup(path);
+        Number(L, 1); Text(L, setup.bindings); return 2;
+      }
+      if (command == "applySetup" || command == "applySetupUndo") {
+        auto setup = zp::ReadSetup(path);
+        if (setup.bindings != Argument(L, 3)) return Reply(L, false, "The setup changed while loading. Try again.");
+        ApplySetup(*current, setup);
+        return Reply(L, true, undo ? "Previous bars and bindings restored." : "Applied setup: " + zp::Utf8(name));
+      }
+      if (command == "renameSetup") {
+        zp::RenameSetup(*store, path, zp::SetupPath(*store, account, current->guid, zp::Wide(Argument(L, 3))));
+        return Reply(L, true, "Setup renamed.");
+      }
+      zp::DeleteSetup(*store, path);
+      return Reply(L, true, "Setup deleted. A copy is retained in local backups.");
+    }
     if (command == "status") {
       Text(L, zp::Utf8(account));
       Text(L, store->Isolated(account) ? "isolated" : "default");
@@ -363,7 +438,7 @@ DWORD Install() {
     MH_DisableHook(MH_ALL_HOOKS); MH_Uninitialize();
     throw std::runtime_error("Protection could not be installed completely. Startup stopped before login.");
   }
-  Log("zProfiles 0.1.0 installed; account modes default unless explicitly isolated.");
+  Log("zProfiles 0.2.0 installed; account modes default unless explicitly isolated.");
   return 0;
 }
 } // namespace
