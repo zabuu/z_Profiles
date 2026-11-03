@@ -56,7 +56,12 @@ def audit(path):
     call(0x4F0A7C, 0x5AFE50)
     call(0x4F0A8D, 0x5AFE50)
     signature(0x5AFE87, '57 6a 00')  # reader opens the first file for reading
-    print('PASS: pinned client hash, PE metadata, native hook ABI signatures, multibar field, and ReloadUI macro/binding call sites.')
+    # SaveBindings accepts 1/2 and updates the active binding set before
+    # saving. Setup switches use set 2 to preserve shared account bindings.
+    signature(0x4B8275, '83 fe 01 74 18 83 fe 02 74 13')
+    signature(0x4B829D, '89 b7 d0 00 00 00')
+    call(0x4B82A3, 0x4B6310)
+    print('PASS: pinned client hash, PE metadata, native hook ABI signatures, multibar field, ReloadUI, and character binding-set save behavior.')
 
 
 if __name__ == '__main__':

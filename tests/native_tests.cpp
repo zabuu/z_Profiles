@@ -6,6 +6,30 @@
 namespace {
 int checks = 0, sent = 0, received = 0;
 zp::Bars delivered{};
+std::array<uint8_t, 0xE70> fakePlayer{};
+std::array<uint8_t, 0x1030> fakeFields{};
+uintptr_t __stdcall LookupPlayer(uint64_t guid) { return guid == 42 ? reinterpret_cast<uintptr_t>(fakePlayer.data()) : 0; }
+struct PlayerFixture {
+  void *memory = VirtualAlloc(nullptr, 0x800000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+  uintptr_t previousImage = image;
+  PlayerFixture() {
+    if (!memory) throw std::runtime_error("allocating mock player image");
+    image = reinterpret_cast<uintptr_t>(memory);
+    // Exercise the production PlayerFlags reader/writer against the exact
+    // audited offsets and calling convention, with generated memory only.
+    *At<uint8_t *>(0xB4B424) = 1;
+    auto manager = reinterpret_cast<uintptr_t>(At<void *>(0xB42000));
+    *At<uintptr_t *>(0xB41414) = manager;
+    *reinterpret_cast<uint64_t *>(manager + 0xC0) = 42;
+    *reinterpret_cast<uintptr_t *>(fakePlayer.data() + 0xE68) = reinterpret_cast<uintptr_t>(fakeFields.data());
+    auto jump = At<uint8_t *>(0x464870);
+    jump[0] = 0x68;
+    auto target = reinterpret_cast<uintptr_t>(&LookupPlayer);
+    std::memcpy(jump + 1, &target, 4); jump[5] = 0xC3;
+    FlushInstructionCache(GetCurrentProcess(), memory, 0x800000);
+  }
+  ~PlayerFixture() { image = previousImage; VirtualFree(memory, 0, MEM_RELEASE); }
+};
 void Check(bool condition, const char *label) {
   ++checks;
   if (!condition) throw std::runtime_error(label);
@@ -56,6 +80,71 @@ void Fixture(const zp::fs::path &root) {
   Check(initial.active.empty(), "no profile means Default");
   initial.Mode(L"testaccount", true);
   Check(!initial.Isolated(L"TESTACCOUNT"), "mode changes do not enable isolation mid-session");
+}
+void SetupTests(zp::Session &session) {
+  const auto oldBars = session.bars;
+  Check(!zp::SetupName(L"../escape") && !zp::SetupName(L" spec") && !zp::SetupName(L"a.b"), "setup names cannot escape storage");
+  Check(zp::SetupName(L"Frost PvP-2") && !zp::SetupName(std::wstring(33, L'x')), "setup names accept readable short labels");
+  const std::string bindings = "ZPB1\n31\t414354494f4e425554544f4e31\n53484946542d31\t414354494f4e425554544f4e31\n";
+  zp::Setup setup{session.bars, 5, bindings};
+  setup.bars[119] = 0x40000001; // macro on a hidden/stance page
+  auto path = zp::SetupPath(*store, session.account, session.guid, L"Frost");
+  zp::WriteSetup(*store, path, setup);
+  auto loaded = zp::ReadSetup(path);
+  Check(loaded.bars == setup.bars && loaded.toggles == 5 && loaded.bindings == bindings, "setup round trip retains all 120 slots, flags and secondary bindings");
+  auto separate = zp::SetupPath(*store, session.account, 43, L"Frost");
+  Check(!zp::fs::exists(separate), "another character cannot see this character's named setup");
+  auto undoPath = zp::SetupPath(*store, session.account, session.guid, L"", true);
+  zp::WriteSetup(*store, undoPath, setup);
+  Check(zp::ListSetups(*store, session.account, session.guid).size() == 1, "Undo is stored separately from the named setup list");
+  bool refused = false;
+  try { zp::SetupPath(*store, L"NORMALACCOUNT", 42, L"Frost"); } catch (...) { refused = true; }
+  Check(refused, "Default accounts cannot create setup storage");
+  refused = false;
+  try { zp::SetupPath(*store, session.account, 0, L"Frost"); } catch (...) { refused = true; }
+  Check(refused, "setup storage requires a character GUID");
+  refused = false;
+  auto invalid = setup; invalid.bindings = "ZPB1\n31\t41\n31\t42\n";
+  try { zp::WriteSetup(*store, path, invalid); } catch (...) { refused = true; }
+  Check(refused && zp::ReadSetup(path).bindings == bindings, "duplicate bindings cannot overwrite a valid snapshot");
+  auto corrupt = zp::ReadBytes(path); corrupt[20] ^= 1;
+  auto badPath = zp::SetupPath(*store, session.account, session.guid, L"Corrupt");
+  zp::AtomicWrite(badPath, corrupt.data(), corrupt.size());
+  refused = false;
+  try { zp::ReadSetup(badPath); } catch (...) { refused = true; }
+  Check(refused, "damaged snapshot checksum prevents applying corrupt bars");
+  zp::DeleteSetup(*store, badPath);
+  auto renamed = zp::SetupPath(*store, session.account, session.guid, L"Frost PvP");
+  zp::RenameSetup(*store, path, renamed);
+  Check(!zp::fs::exists(path) && zp::ReadSetup(renamed).bars == setup.bars, "renaming preserves snapshot contents");
+  zp::WriteSetup(*store, path, setup);
+  refused = false;
+  try { zp::RenameSetup(*store, path, renamed); } catch (...) { refused = true; }
+  Check(refused && zp::fs::exists(path), "renaming never overwrites an existing setup");
+  const int previousSent = sent;
+  zp::Bars official{};
+  store->LoadBars(session.account, session.guid, true, official);
+  {
+    PlayerFixture player;
+    fakeFields[0x102A] = 0xA9;
+    ApplySetup(session, setup);
+    zp::Bars checkpoint{};
+    Check(delivered == setup.bars && session.bars == setup.bars, "named setup replays bars through the production receive adapter");
+    Check(fakeFields[0x102A] == 0xA5 && session.toggles == 5, "setup applies visibility without changing unrelated player bits");
+    Check(store->LoadBars(session.account, session.guid, false, checkpoint) && checkpoint == setup.bars, "applied setup is persisted as the local action checkpoint");
+    Check(sent == previousSent, "applying a setup sends no server edits");
+    zp::Bars afterOfficial{};
+    Check(store->LoadBars(session.account, session.guid, true, afterOfficial) && afterOfficial == official, "applying a setup retains the official Revert baseline");
+    *At<uint8_t *>(0xB4B424) = 0;
+    refused = false;
+    auto unavailable = setup; unavailable.bars[0] = 123;
+    try { ApplySetup(session, unavailable); } catch (...) { refused = true; }
+    Check(refused && session.bars == setup.bars, "missing live player leaves the setup untouched");
+  }
+  zp::DeleteSetup(*store, renamed);
+  Check(!zp::fs::exists(renamed) && zp::ReadSetup(undoPath).bars == setup.bars, "delete archives the named setup while retaining Undo");
+  store->SaveBars(session.account, session.guid, false, oldBars);
+  DeliverBars(session, oldBars);
 }
 void Tests(const zp::fs::path &root) {
   Check(!zp::Segment(L"..") && !zp::Segment(L"CON.txt") && !zp::Segment(L"x\\y"), "unsafe path segments rejected");
@@ -172,6 +261,7 @@ void Tests(const zp::fs::path &root) {
   }
   session.realm = L"Realm"; session.character = L"Testchar";
   store->Identify(session.account, session.realm, session.character, guid);
+  SetupTests(session);
   Write(original / L"Realm/Otherchar/layout-cache.txt", "isolated other layout");
   store->Revert(L"TESTACCOUNT", L"Realm", L"Testchar", true);
   Check(Replay(session), "current-character Revert replays official bars through client receive adapter");
@@ -193,7 +283,7 @@ void Tests(const zp::fs::path &root) {
   session.account = L"NORMALACCOUNT";
   SendHook(&connection, nullptr, &editPacket);
   DispatchHook(&connection, nullptr, 7, &downloadPacket);
-  Check(sent == 3 && received == 5, "Default account network writes and cache reads pass through");
+  Check(sent == 3 && received == 7, "Default account network writes and cache reads pass through");
   store->Mode(L"TESTACCOUNT", false);
   Check(store->Isolated(L"TESTACCOUNT"), "disabling isolation does not upload an in-memory isolated session");
   store->Mode(L"TESTACCOUNT", true); // retain isolation for abrupt-exit child
@@ -206,6 +296,8 @@ int CrashChild(const zp::fs::path &root) {
   Write(store->original / L"TESTACCOUNT/macros-cache.txt", "crash-session macro");
   zp::Bars bars{}; bars[3] = 12345;
   store->SaveBars(L"TESTACCOUNT", 42, false, bars);
+  zp::Setup setup{bars, 7, "ZPB1\n31\t414354494f4e425554544f4e31\n"};
+  zp::WriteSetup(*store, zp::SetupPath(*store, L"TESTACCOUNT", 42, L"Crash saved"), setup);
   // Deliberately bypass destructors and every logout/save event.
   TerminateProcess(GetCurrentProcess(), 123);
   return 1;
@@ -225,6 +317,8 @@ void AbruptExit(const zp::fs::path &root, const std::wstring &executable) {
   Check(Contents(restarted.Profile(L"TESTACCOUNT") / L"macros-cache.txt") == "crash-session macro", "isolated file survives forced termination");
   zp::Bars bars{};
   Check(restarted.LoadBars(L"TESTACCOUNT", 42, false, bars) && bars[3] == 12345, "action checkpoint survives forced termination and restart");
+  auto setup = zp::ReadSetup(zp::SetupPath(restarted, L"TESTACCOUNT", 42, L"Crash saved"));
+  Check(setup.bars[3] == 12345 && setup.toggles == 7 && setup.bindings == "ZPB1\n31\t414354494f4e425554544f4e31\n", "explicitly saved setups survive process termination without logout");
   zp::AtomicWrite(restarted.data / L"modes.txt", "corrupt registry");
   bool refused = false;
   try { zp::Store invalid(root); } catch (...) { refused = true; }

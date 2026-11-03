@@ -15,15 +15,28 @@ function methods:SetText(text) self.text = text end
 function methods:SetWidth(width) self.width = width end
 function methods:SetHeight(height) self.height = height end
 function methods:SetScript(name, fn) self.scripts[name] = fn end
-function methods:Show() self.shown = true end
+function methods:Show()
+  local wasShown = self.shown
+  self.shown = true
+  if not wasShown and self.scripts.OnShow then
+    local previousThis = this; this = self; self.scripts.OnShow(); this = previousThis
+  end
+end
 function methods:Hide() self.shown = false end
 function methods:IsShown() return self.shown end
+function methods:IsVisible()
+  local parent = rawget(self,'parent')
+  return self.shown and (not parent or parent:IsVisible())
+end
 function methods:Enable() self.enabled = true end
 function methods:Disable() self.enabled = false end
+function methods:GetText() return self.text or '' end
+function methods:SetParent(parent) self.parent = parent end
+function methods:SetPoint(...) self.point = {...} end
 function methods:CreateFontString() return CreateFrame('FontString') end
 local metatable = {__index = function(t,k) return methods[k] or function() end end}
 function CreateFrame(kind,name,parent,template)
-  local frame = setmetatable({kind=kind,name=name,scripts={},enabled=true,shown=true},metatable)
+  local frame = setmetatable({kind=kind,name=name,parent=parent,scripts={},enabled=true,shown=true},metatable)
   table.insert(frames,frame)
   return frame
 end
@@ -81,7 +94,7 @@ class AddonTests(unittest.TestCase):
         lua.execute(BOOTSTRAP)
         if native:
             lua.execute('zProfilesNative=Native')
-        for name in ('Core.lua', 'Options.lua'):
+        for name in ('Core.lua', 'Options.lua', 'Setups.lua', 'SetupUI.lua'):
             lua.execute((ROOT / name).read_text(encoding='utf-8'))
         return lua
 
@@ -166,7 +179,7 @@ class AddonTests(unittest.TestCase):
         self.assertIn('Checkpoint failed', lua.eval('zProfiles.statusLabel.text'))
 
     def test_uses_lua_50_compatible_constructs(self):
-        for name in ('Core.lua', 'Options.lua'):
+        for name in ('Core.lua', 'Options.lua', 'Setups.lua', 'SetupUI.lua'):
             text = (ROOT / name).read_text(encoding='utf-8')
             self.assertNotIn('string.match', text)
             self.assertNotIn('string.gmatch', text)
