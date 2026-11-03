@@ -1,6 +1,6 @@
 -- WoW 1.12 / Lua 5.0. Protection is owned by the native layer, even if
 -- this addon is disabled or no logout event is delivered.
-zProfiles = { version = "0.1.0", accountPage = 1, characterPage = 1 }
+zProfiles = { version = "0.2.0", accountPage = 1, characterPage = 1 }
 local Z = zProfiles
 
 function Z:Message(message)
@@ -98,4 +98,7 @@ end)
 
 SLASH_ZPROFILES1 = "/zp"
 SLASH_ZPROFILES2 = "/zprofiles"
-SlashCmdList["ZPROFILES"] = function() Z:Toggle() end
+SlashCmdList["ZPROFILES"] = function(message)
+  if message and string.find(string.lower(message), "^%s*bars%s*$") then Z:ToggleSetups()
+  else Z:Toggle() end
+end

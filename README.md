@@ -2,7 +2,7 @@
 
 Local account profiles for the audited Windows 10/11 x86 OctoWoW / WoW 1.12.1.5875 client.
 
-**0.1.0 is an experimental first release. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
+**0.2.0 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
 
 ## Installation
 
@@ -24,6 +24,23 @@ Enable the zProfiles addon, log in to a character, and open `/zp` or `/zprofiles
 Every unconfigured account uses **Default**. Default accounts keep normal file and server synchronization behavior. Choosing **Use Default** also takes effect only after a full restart: an isolated session is never uploaded by opting out in the middle of play.
 
 The panel lists account directories visible on this installation, then their local realm/character directories. It does not query passwords, remotely enumerate accounts, or send profile contents anywhere.
+
+## Talent / bar setups
+
+Use **Bar setups** above the talent window, the **Bar setups** button in `/zp`, or `/zp bars`. The compact panel follows the talent window; opening it with the slash command gives you a movable standalone panel.
+
+1. On an **isolated** character, arrange your bars and bindings for one spec.
+2. Enter a name such as `Frost`, `Fire`, `Tank`, or `Healing`, then choose **Save new**.
+3. Change talents through OctoWoW, arrange the second setup, and save it under another name.
+4. After changing specs, click **Apply** beside the matching saved setup. No UI reload is needed.
+
+Each character has its own named setups. They contain **all 120 action slots**, including hidden/stance pages, the keys assigned to each command, and the four stock multibar visibility flags. Applying writes character-specific bindings inside the isolated clone, leaving other characters' shared binding cache alone. Talent points, addon frame positions, pfUI bar styling, pet-bar arrangements, and macro text are outside these snapshots. Macro buttons keep their slot references to the current macros; keep those macros available when using a saved setup.
+
+Select a name to **Update selected**, **Rename**, or **Delete selected**. Update and Delete require a second click in the panel. Existing/deleted snapshots are retained in local backups. **Undo switch** restores the unsaved bars and bindings captured just before the most recent Apply attempt; applying Undo does not replace that backup.
+
+Switching is manual and does not detect or change OctoWoW specs. Controls are unavailable during combat, while holding an item/spell on the cursor, or for Default accounts. Saved snapshots are flushed immediately by the DLL, so saving does not depend on logging out. Later edits are not written back into a named snapshot until you choose Update. The normal isolated action checkpoint still tracks bar edits.
+
+**Updating from 0.1.0:** fully exit WoW and replace `<WoW folder>/zProfilesNative.dll` with the updated file from `bin/zProfilesNative.dll`, as well as updating the addon folder. Keep `zProfilesNative.dll` first in `dlls.txt`. The panel explains this if it finds an older DLL. Existing isolated profiles remain usable. Character/account **Revert** restores the official baseline while keeping named setups and Undo available separately.
 
 ## What is isolated
 
@@ -63,6 +80,7 @@ WTF/zProfiles/modes.txt                   opted-in account names
 WTF/zProfiles/profiles/<ACCOUNT>/...       working account clones
 WTF/zProfiles/bars/<ACCOUNT>/...           official/local action checkpoints
 WTF/zProfiles/identities/<ACCOUNT>/...     local character/GUID mapping
+WTF/zProfiles/setups/<ACCOUNT>/<GUID>/...  named bars/bindings and last Undo
 WTF/zProfiles/backups/...                 pre-Revert copies
 WTF/zProfiles/staging/...                 incomplete/new clones
 WTF/zProfiles/discard/...                 old UI saves during a Revert
@@ -78,7 +96,7 @@ Requires Visual Studio C++ x86 build tools. The addon itself has no Lua library 
 
 ```powershell
 .\native\build.ps1 -Tests
-python -m unittest discover -s tests -p test_addon.py -v
+python -m unittest discover -s tests -p 'test_*.py' -v
 python .\tests\audit_client.py 'C:\Path\To\WoW.exe'
 .\Package.ps1
 ```

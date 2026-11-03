@@ -47,6 +47,7 @@ function Z:CreateWindow()
   Label(window, "ACCOUNTS ON THIS COMPUTER", 11, 24, -122)
   self.accountTitle = Label(window, "Select an account", 15, 302, -120, 460)
   Button(window, "X", 26, 744, -18, function() window:Hide() end)
+  Button(window, "Bar setups", 100, 574, -82, function() Z:ToggleSetups() end)
   Button(window, "Refresh", 80, 680, -82, function() Z:Refresh() end)
 
   self.accountButtons = {}
