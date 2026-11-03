@@ -48,6 +48,18 @@ The audited ReloadUI teardown saves and destroys native macro state and destroys
 
 The latest original directory supplies file baselines. Official action-slot baselines are the server arrays received on login. These are intentionally distinct sources: arbitrary addon files from a different computer are not available to a client addon.
 
+## Named setup lifecycle (0.2.0)
+
+The original bridge version remains 1; `setupVersion` advertises the new setup capability independently. An old DLL can still protect accounts while the updated Lua panel directs the user to replace it before using setups.
+
+Setups are scoped to the authenticated account and current character GUID at `WTF/zProfiles/setups/<ACCOUNT>/<GUID>/<name>.zps`. Names are restricted to 1-32 letters, numbers, spaces, hyphens and underscores; device names, path separators and leading/trailing spaces are rejected. Files contain a versioned header, all 120 raw action slots, a visibility nibble, hex-encoded key/command pairs and a corruption checksum. The checksum detects accidental damage; it is not an authentication mechanism. Reads never execute Lua. Writes flush and atomically replace the snapshot, archiving prior copies. Rename cannot overwrite another setup; Delete archives the file.
+
+Save captures the current native action journal and Lua's binding enumeration, including secondary keys and available direct-action bindings. Apply reads and validates bindings, captures the current unsaved setup in the separate `.undo.zps` snapshot, clears the old key list, sets the target keys, and saves character binding set 2. The audited stock `SaveBindings(2)` sets the active binding set to 2 as well as saving it. The native bridge rereads the snapshot and verifies the binding payload still matches before applying its bars and flags through the existing receive dispatcher and local checkpoints. There is no outgoing action edit or UI reload. A failed binding/native apply restores previous bindings and their previous binding-set scope; native checkpoint failures attempt to restore previous bars/flags. An unrecoverable native rollback records a profile fault.
+
+Undo loads the pre-switch snapshot without overwriting it. Named snapshots and Undo live outside the cloned account directory, so character/account Revert does not delete them. Default accounts, uninitialized characters, muted reloads and faulted profiles cannot use native setup operations. Lua also blocks combat and occupied-cursor operations. Snapshots contain action references; macro contents and talent state are not copied. Server-driven spec changes continue through the existing isolated-action baseline handling, and the user manually applies the desired saved setup afterward.
+
+Explicit Save/Update is durable across termination; a complete binding/bar switch spans Lua and native cache writes and is not a single cross-file transaction. Failure recovery and a retained Undo reduce inconsistent states, while the original account/server isolation boundary remains in force. Cross-spec runtime behavior still needs the live checks in VALIDATION.md.
+
 ## Scope of validation
 
 The native executable tests include the production adapter and install the production Win32 hooks into a disposable test process. They exercise actual redirected file operations, capture forwarded messages with mock downstream functions, and force-terminate a child process. They do not simulate a live server's login sequence or prove coexistence with every client mod. Those checks are tracked separately in VALIDATION.md.
