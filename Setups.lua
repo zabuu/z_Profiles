@@ -65,7 +65,7 @@ end
 
 function Z:SetupsReady()
   if not self:Available() or self:Call("setupVersion") ~= 1 then
-    return nil, "Copy the updated bin/zProfilesNative.dll beside WoW.exe, then fully restart."
+    return nil, "Install the updated zAPI.dll from github.com/zabuu/zAPI beside WoW.exe, then fully restart."
   end
   local account, active, configured, problem = self:Call("status")
   if active ~= "isolated" then return nil, "Choose Isolate for this account in /zp, then fully restart WoW." end

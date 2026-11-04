@@ -93,7 +93,7 @@ class AddonTests(unittest.TestCase):
         lua = LuaRuntime(unpack_returned_tuples=True)
         lua.execute(BOOTSTRAP)
         if native:
-            lua.execute('zProfilesNative=Native')
+            lua.execute('zProfilesNative=Native; zAPI=function(command) if command == "profilesVersion" then return 1 end end')
         for name in ('Core.lua', 'Options.lua', 'Setups.lua', 'SetupUI.lua'):
             lua.execute((ROOT / name).read_text(encoding='utf-8'))
         return lua
@@ -105,6 +105,18 @@ class AddonTests(unittest.TestCase):
         self.assertFalse(lua.eval('zProfiles.revertAccountButton.enabled'))
         self.assertIn('not loaded', lua.eval('zProfiles.statusLabel.text'))
         self.assertEqual(lua.eval('table.getn(calls)'), 0)
+
+    def test_old_standalone_bridge_does_not_enable_new_addon(self):
+        lua = self.setup_lua()
+        lua.execute('zAPI=function() return nil end; SlashCmdList.ZPROFILES()')
+        self.assertFalse(lua.eval('zProfiles.isolateButton.enabled'))
+        self.assertFalse(lua.eval('zProfiles.revertAccountButton.enabled'))
+        self.assertIn('zAPI.dll', lua.eval('zProfiles.noticeLabel.text'))
+
+    def test_failed_merged_capability_probe_disables_controls(self):
+        lua = self.setup_lua()
+        lua.execute('zAPI=function() error("unavailable") end; SlashCmdList.ZPROFILES()')
+        self.assertFalse(lua.eval('zProfiles.isolateButton.enabled'))
 
     def test_default_account_only_changes_mode_on_request(self):
         lua = self.setup_lua()

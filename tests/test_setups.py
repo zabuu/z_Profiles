@@ -71,6 +71,7 @@ function Native(command,a,b,c)
   return originalNative(command,a,b,c)
 end
 zProfilesNative = Native
+zAPI = function(command) if command == 'profilesVersion' then return 1 end end
 '''
 
 

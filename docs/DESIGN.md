@@ -1,3 +1,5 @@
+The native implementation now lives in [zabuu/zAPI](https://github.com/zabuu/zAPI). `zAPI.dll` provides the existing `zProfilesNative()` Lua interface; the interface name does not imply a separate DLL. One shared initialization path owns file/network hooks and Lua registration.
+
 # Native protection contract
 
 The Lua addon is a controller and account/character browser. `zProfilesNative(command, ...)` exposes versioned operations returning primitive values. It never executes Lua supplied from disk or by another client.

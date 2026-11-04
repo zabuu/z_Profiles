@@ -95,7 +95,7 @@ function Z:Render()
   for _, row in ipairs(accounts) do if row[1] == self.selected then selected = row end end
   if not self.available then
     self.statusLabel:SetText("|cffffaa55Native protection is not loaded.|r")
-    self.noticeLabel:SetText("Install the bundled native layer, then restart WoW. Profile controls are unavailable.")
+    self.noticeLabel:SetText("Install zAPI.dll 3.2+ from github.com/zabuu/zAPI, then fully restart WoW. Profile controls are unavailable.")
   elseif self.problem and self.problem ~= "ok" then
     self.statusLabel:SetText("|cffff7777" .. self.problem .. "|r")
     self.noticeLabel:SetText("Check the native log before making settings changes.")

@@ -1,8 +1,10 @@
+The native fixtures and client audit have moved to [zAPI/tests](https://github.com/zabuu/zAPI/tree/main/tests). The merged DLL also has a shared registration/ReloadUI/render-hook chaining fixture.
+
 # Validation status
 
 ## Automated checks
 
-Version 0.2.0: **106 native checks and 24 Lua tests pass**, including the forced-termination fixture. The pinned local client also passes the static audit. Compiler warnings are confined to the vendored MinHook C sources.
+Version 0.3.0: **106 native checks and 26 Lua tests pass**, including the forced-termination fixture. The pinned local client also passes the static audit. Compiler warnings are confined to the vendored MinHook C sources.
 
 The native tests use only generated `TESTACCOUNT` / `NORMALACCOUNT` fixtures under ignored `.test-data` directories. They do not read the installation's real account directories.
 
@@ -44,7 +46,7 @@ Use a disposable test account before relying on this release:
 5. Repeat edits and force-close WoW; verify original local files and remote official settings still match the baseline. Isolated changes that were never flushed may be lost.
 6. Revert the current character. Verify macros/bindings/layouts after the automatic UI reload, and check other characters/shared settings remain isolated.
 7. Revert the account. Verify shared macros/bindings and all local character layouts reset; previous isolated copies remain in backups.
-8. Exercise the installed SuperWoW, ClassicAPI, Nampower, VanillaHelpers, and zAPI stack. Verify the native layer loads first and no later mod bypasses its settings/file boundary.
+8. Exercise the installed SuperWoW, ClassicAPI, Nampower, VanillaHelpers, and zAPI stack. Verify the shared zAPI.dll loads first and no later mod bypasses its settings/file boundary.
 9. Switch accounts, realms, reload UI, zone, and return to character select. Default accounts must retain normal behavior, and isolated accounts must remain isolated.
 10. Open talents before and after `/zp bars`. Check the Bar setups tab with stock and pfUI talent skins, parent hiding, dragging, small resolutions and UI scaling.
 11. Save two setups with different primary/secondary bindings, empty slots, macros, items, spell ranks, stance pages and stock bar visibility. Change specs through OctoWoW and manually Apply each setup. Verify the correct spells/icons/bindings and third-party bar refresh without a reload. Recheck that bindings persist after a character relog and other characters retain shared account bindings.

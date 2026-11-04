@@ -1,6 +1,6 @@
 -- WoW 1.12 / Lua 5.0. Protection is owned by the native layer, even if
 -- this addon is disabled or no logout event is delivered.
-zProfiles = { version = "0.2.0", accountPage = 1, characterPage = 1 }
+zProfiles = { version = "0.3.0", accountPage = 1, characterPage = 1 }
 local Z = zProfiles
 
 function Z:Message(message)
@@ -10,7 +10,7 @@ function Z:Message(message)
 end
 
 function Z:Call(command, a, b, c)
-  if type(zProfilesNative) ~= "function" then return nil, "Native protection is not loaded." end
+  if type(zProfilesNative) ~= "function" then return nil, "Install zAPI.dll with profile protection, then restart WoW." end
   local success, value, second, third, fourth, fifth = pcall(zProfilesNative, command, a, b, c)
   if not success then return nil, "Native protection failed: " .. tostring(value) end
   if value == 0 and (command == "status" or command == "accounts" or command == "characters") then
@@ -20,6 +20,9 @@ function Z:Call(command, a, b, c)
 end
 
 function Z:Available()
+  if type(zAPI) ~= "function" then return false end
+  local ok, capability = pcall(zAPI, "profilesVersion")
+  if not ok or capability ~= 1 then return false end
   local version = self:Call("version")
   return version == 1
 end
