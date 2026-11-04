@@ -4,7 +4,7 @@ The native fixtures and client audit have moved to [zAPI/tests](https://github.c
 
 ## Automated checks
 
-Version 0.3.0: **106 native checks and 26 Lua tests pass**, including the forced-termination fixture. The pinned local client also passes the static audit. Compiler warnings are confined to the vendored MinHook C sources.
+Version 0.3.1: **106 native checks and 26 Lua tests pass**, including the forced-termination fixture. The pinned local client also passes the static audit. Compiler warnings are confined to the vendored MinHook C sources.
 
 The native tests use only generated `TESTACCOUNT` / `NORMALACCOUNT` fixtures under ignored `.test-data` directories. They do not read the installation's real account directories.
 

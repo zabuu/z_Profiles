@@ -2,7 +2,7 @@
 
 Local account profiles for the audited Windows 10/11 x86 OctoWoW / WoW 1.12.1.5875 client.
 
-**0.3.0 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
+**0.3.1 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
 
 ## Installation
 
@@ -23,7 +23,7 @@ The panel lists account directories visible on this installation, then their loc
 
 ## Talent / bar setups
 
-Use **Bar setups** above the talent window, the **Bar setups** button in `/zp`, or `/zp bars`. The compact panel follows the talent window; opening it with the slash command gives you a movable standalone panel.
+Use **Bar setups** in the talent window's footer, the **Bar setups** button in `/zp`, or `/zp bars`. The talent button uses the stock window's colors and a small spellbook icon, adopts pfUI's button skin when available, and stays highlighted while its panel is open. The compact panel follows the talent window; opening it with the slash command gives you a movable standalone panel.
 
 1. On an **isolated** character, arrange your bars and bindings for one spec.
 2. Enter a name such as `Frost`, `Fire`, `Tank`, or `Healing`, then choose **Save new**.

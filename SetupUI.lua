@@ -43,6 +43,7 @@ function Z:CreateSetupWindow()
     this:ClearAllPoints()
     this:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
     this:StartMoving()
+    Z:UpdateTalentSetupButton()
   end)
   window:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
   window:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = true, tileSize = 16, edgeSize = 16, insets = { left = 5, right = 5, top = 5, bottom = 5 } })
@@ -90,7 +91,11 @@ function Z:CreateSetupWindow()
   self.setupUndo = Button(window, "Undo switch", 106, 246, -412, function()
     Z.setupConfirmation = nil; Z:ApplySetup(nil, true)
   end)
-  window:SetScript("OnShow", function() Z.setupNotice = nil; Z.setupConfirmation = nil; Z:RefreshSetups() end)
+  window:SetScript("OnShow", function()
+    Z.setupNotice = nil; Z.setupConfirmation = nil; Z:RefreshSetups()
+    Z:UpdateTalentSetupButton()
+  end)
+  window:SetScript("OnHide", function() Z:UpdateTalentSetupButton() end)
   if UISpecialFrames then table.insert(UISpecialFrames, "zProfilesSetupWindow") end
   window:Hide()
 end
@@ -133,6 +138,7 @@ function Z:PositionSetupWindow(talents)
     window:SetParent(UIParent)
     window:SetPoint("CENTER", UIParent, "CENTER", 200, 0)
   end
+  self:UpdateTalentSetupButton()
 end
 
 function Z:ToggleSetups(talents)
@@ -141,16 +147,69 @@ function Z:ToggleSetups(talents)
   else self:PositionSetupWindow(talents); self:RefreshSetups(); self.setupWindow:Show() end
 end
 
+function Z:UpdateTalentSetupButton()
+  local button = self.talentSetupsButton
+  if not button then return end
+  if self.setupWindow and self.setupWindow:GetParent() == TalentFrame and self.setupWindow:IsShown() then
+    button:LockHighlight()
+  else button:UnlockHighlight() end
+end
+
+function Z:StyleTalentSetupButton()
+  local button = self.talentSetupsButton
+  if not button or not TalentFrame then return end
+  button:ClearAllPoints()
+  if TalentFrame.backdrop then
+    -- pfUI's visible panel ends above the stock frame's unused texture area.
+    button:SetPoint("BOTTOMLEFT", TalentFrame.backdrop, "BOTTOMLEFT", 12, 9)
+    if not button.zProfilesPfSkinned and pfUI and pfUI.api and type(pfUI.api.SkinButton) == "function" then
+      pfUI.api.SkinButton(button)
+      button.zProfilesPfSkinned = true
+    end
+  else
+    -- Match the stock Close button's footer row, to the left of talent points.
+    button:SetPoint("BOTTOMLEFT", TalentFrame, "BOTTOMLEFT", 24, 81)
+  end
+  self:UpdateTalentSetupButton()
+end
+
 function Z:AttachTalentSetups()
-  if not TalentFrame or self.talentSetupsButton then return end
+  if not TalentFrame then return end
+  if self.talentSetupsButton then self:StyleTalentSetupButton(); return end
   local button = CreateFrame("Button", "zProfilesTalentSetupsButton", TalentFrame, "UIPanelButtonTemplate")
   self.talentSetupsButton = button
-  button:SetWidth(108); button:SetHeight(23)
-  -- A tab above the frame avoids the talent points/cancel/spec controls and
-  -- remains visible when the stock talent frame sits at the left screen edge.
-  button:SetPoint("BOTTOMLEFT", TalentFrame.backdrop or TalentFrame, "TOPLEFT", 18, -3)
-  button:SetText("|cffc77dffBar setups|r")
+  button.zProfilesPfSkinned = false
+  button:SetWidth(112); button:SetHeight(22)
+  local icon = button:CreateTexture(nil, "OVERLAY")
+  icon:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
+  icon:SetWidth(14); icon:SetHeight(14)
+  icon:SetPoint("LEFT", button, "LEFT", 7, 0)
+  icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  text:SetPoint("LEFT", button, "LEFT", 25, 0)
+  text:SetPoint("RIGHT", button, "RIGHT", -5, 0)
+  text:SetJustifyH("CENTER")
+  button:SetFontString(text)
+  button:SetNormalFontObject(GameFontNormalSmall)
+  button:SetHighlightFontObject(GameFontHighlightSmall)
+  button:SetText("Bar setups")
   button:SetScript("OnClick", function() Z:ToggleSetups(true) end)
+  button:SetScript("OnEnter", function()
+    if not GameTooltip then return end
+    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+    GameTooltip:SetText("Bar setups")
+    GameTooltip:AddLine("Save and swap this character's action bars and key bindings.", 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  button:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+  -- Respect the talent frame's original OnShow handler and skin hooks. Doing
+  -- the layout afterward also handles skins that create their backdrop late.
+  local onShow = TalentFrame:GetScript("OnShow")
+  TalentFrame:SetScript("OnShow", function()
+    if onShow then onShow() end
+    Z:StyleTalentSetupButton()
+  end)
+  self:StyleTalentSetupButton()
 end
 
 local events = CreateFrame("Frame")
