@@ -34,7 +34,7 @@ For isolated accounts:
 - `0x2BF CMSG_SET_ACTIONBAR_TOGGLES`: checkpoint the flags, update the local field, drop the message.
 - `0x20B CMSG_UPDATE_ACCOUNT_DATA`: drop the message.
 - `0x20A CMSG_REQUEST_ACCOUNT_DATA`: drop the request.
-- `0x209 SMSG_ACCOUNT_DATA_TIMES`: mask the eight timestamps to zero so the clone stays authoritative.
+- `0x209 SMSG_ACCOUNT_DATA_TIMES`: this client reads eight 16-byte MD5 digests. zAPI 3.4 supplies the local cache digests so binding/settings initialization proceeds using the isolated files. The old 32-byte timestamp assumption was incorrect.
 - `0x20C SMSG_UPDATE_ACCOUNT_DATA`: drop the cache payload.
 - `0x129 SMSG_ACTION_BUTTONS`: retain the official 480-byte baseline, then substitute the local array before dispatch.
 
