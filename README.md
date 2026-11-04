@@ -58,6 +58,25 @@ This is a profile boundary, not a rollback of the character. Inventory, equipmen
 
 WoW may keep unsaved macro, binding, or addon changes only in memory. Those *isolated* changes can be lost in a crash; preserving the official copy does not make every addon crash-durable. Action-button checkpoints use flushed temporary files and atomic replacement.
 
+## Addon settings and addon profiles
+
+Addons keep control of their own profiles, profile selectors, layouts, and
+settings. On an isolated account, ordinary account-wide `SavedVariables` and
+`SavedVariablesPerCharacter` files load and save in the matching working clone,
+with their account/realm/character paths and contents preserved. Choosing or
+editing a profile inside an addon continues to use that addon's normal controls.
+Default accounts keep their normal files and behavior.
+
+The clone is seeded from that account's existing local files once, then retains
+its own changes across reloads and logins. It does not re-import or overwrite
+addon settings on every login. Changes made in the original files while using
+Default mode do not automatically merge into an existing isolated clone.
+
+Named zProfiles bar setups contain action slots and keybindings. Applying one
+does not select, reset, or restore another addon's profile. Use that addon's
+profile selector for its settings. Account/character **Revert** does restore
+the corresponding cloned files, including addon settings in that scope.
+
 ## Revert
 
 **Revert beside a character** replaces that character's cloned directory with its original local directory and resets its action bars to the most recent official slots received from the server. Other characters and shared account files retain their isolated settings.
