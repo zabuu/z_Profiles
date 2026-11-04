@@ -8,7 +8,7 @@ from test_addon import BOOTSTRAP
 ROOT = Path(__file__).resolve().parents[1]
 MOCK = r'''
 state.active, state.desired = 'isolated', 'isolated'
-state.setupVersion, state.combat, state.cursor = 1, false, false
+state.setupVersion, state.liveBarsVersion, state.combat, state.cursor = 1, 1, false, false
 setups, currentBars, undoSetup, lastSavedSet = {}, 'Frost bars', nil, 1
 bindingCommands = {'HEADER_TEST','MOVEFORWARD','ACTIONBUTTON1','SPELL Frostbolt'}
 bindings = {W='MOVEFORWARD', ['1']='ACTIONBUTTON1', ['SHIFT-1']='ACTIONBUTTON1', ['CTRL-F']='SPELL Frostbolt'}
@@ -39,6 +39,7 @@ function CursorHasSpell() return false end
 local originalNative = Native
 function Native(command,a,b,c)
   if command == 'setupVersion' then return state.setupVersion end
+  if command == 'liveBarsVersion' then return state.liveBarsVersion end
   if command == 'setups' then
     local names = {}
     for name in pairs(setups) do table.insert(names,name) end
@@ -142,7 +143,7 @@ class SetupTests(unittest.TestCase):
 
     def test_default_combat_cursor_old_backend_and_fault_block_mutations(self):
         for expression in ('state.active="default"', 'state.combat=true', 'state.cursor=true',
-                           'state.setupVersion=0', 'state.problem="checkpoint failed"'):
+                           'state.setupVersion=0', 'state.liveBarsVersion=0', 'state.problem="checkpoint failed"'):
             with self.subTest(expression=expression):
                 lua = self.lua()
                 lua.execute(expression + '; zProfiles:SaveSetup("Blocked"); zProfiles:ToggleSetups()')

@@ -2,7 +2,7 @@
 ## Title: |cffc77dffz|rProfiles
 ## Notes: Local account profiles with native settings isolation. /zp
 ## Author: Zab
-## Version: 0.3.1
+## Version: 0.3.2
 ## X-Website: https://github.com/zabuu/z_Profiles
 
 Core.lua

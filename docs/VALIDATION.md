@@ -4,7 +4,9 @@ The native fixtures and client audit have moved to [zAPI/tests](https://github.c
 
 ## Automated checks
 
-Version 0.3.1: **106 native checks and 26 Lua tests pass**, including the forced-termination fixture. The pinned local client also passes the static audit. Compiler warnings are confined to the vendored MinHook C sources.
+Version 0.3.2 / zAPI 3.5: **146 native checks and 26 Lua tests pass**, including the forced-termination fixture. The pinned local client also passes the static audit. Compiler warnings are confined to the vendored MinHook C sources.
+
+The live-slot regression reproduces the previous no-op Apply: the old mocked dispatcher saw a restored login seed while the actual live table remained unchanged. It now verifies the local setter, spell/item/account-macro/character-macro restoration, all 120 slots, true-live Save/Undo capture, disabled uploads, one final refresh and rollback after a failed live write. The live setter, cache refresh flags, full-bar event and separate seed/live table addresses are included in the static ABI audit.
 
 The native tests use only generated `TESTACCOUNT` / `NORMALACCOUNT` fixtures under ignored `.test-data` directories. They do not read the installation's real account directories.
 
@@ -26,7 +28,7 @@ Covered behavior includes:
 - Corrupt registry data cannot silently turn configured protection off.
 - Named setup files preserve all 120 raw action slots, secondary bindings and visibility flags; corrupt payloads and unsafe names are rejected.
 - Setup storage is scoped to account/GUID; Default accounts and zero GUIDs cannot create snapshots. Rename collisions preserve both files; Delete archives snapshots; Undo is kept outside the named list.
-- Named setup application exercises the production receive adapter and player-field read/write code against generated x86 memory. It updates the local action checkpoint and visibility nibble, preserves the official baseline and unrelated player bits, and sends no server edit. A missing live player leaves the setup unchanged.
+- Named setup application exercises the production local-setter adapter and player-field read/write code against generated x86 memory. It updates the live action table, local checkpoint and visibility nibble, preserves the official baseline and unrelated player bits, and sends no server edit. A missing live player leaves the setup unchanged.
 - A saved setup survives forced termination with no logout or destructor, alongside the existing isolated files and action checkpoints.
 
 Lua tests cover absent/incompatible backends, Default behavior, mode selection, pending-restart status, account/character pagination, current/offline Revert routing, partial-Revert reload, event setup, backend errors, and Lua 5.0 syntax restrictions.

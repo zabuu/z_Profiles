@@ -1,6 +1,6 @@
 -- WoW 1.12 / Lua 5.0. Protection is owned by the native layer, even if
 -- this addon is disabled or no logout event is delivered.
-zProfiles = { version = "0.3.1", accountPage = 1, characterPage = 1 }
+zProfiles = { version = "0.3.2", accountPage = 1, characterPage = 1 }
 local Z = zProfiles
 
 function Z:Message(message)

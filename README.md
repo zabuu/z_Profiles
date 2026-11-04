@@ -2,12 +2,12 @@
 
 Local account profiles for the audited Windows 10/11 x86 OctoWoW / WoW 1.12.1.5875 client.
 
-**0.3.1 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
+**0.3.2 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
 
 ## Installation
 
 1. Put the addon folder in `Interface/AddOns/z_Profiles`, or clone this repository there. Enable **zProfiles** in the AddOns menu.
-2. Install **[zAPI.dll 3.2 or later](https://github.com/zabuu/zAPI#installation)** separately. Download **`zAPI.dll`** from that repository's **`bin`** folder and copy it into your main WoW folder, beside `WoW.exe` and `VanillaFixes.exe`.
+2. Install **[zAPI.dll 3.5 or later](https://github.com/zabuu/zAPI#installation)** separately. Download **`zAPI.dll`** from that repository's **`bin`** folder and copy it into your main WoW folder, beside `WoW.exe` and `VanillaFixes.exe`.
 3. Open **`dlls.txt`** in that main WoW folder. Put **`zAPI.dll`** first, exactly once, and preserve your other DLL entries below it. Remove the old **`zProfilesNative.dll`** line if upgrading. The shared zAPI includes profile protection; do not load both DLLs.
 4. Fully restart through **VanillaFixes.exe**. `/reload` cannot load a new DLL. Installing an addon through Git or an addon manager does not install this DLL or edit `dlls.txt`.
 
@@ -30,13 +30,15 @@ Use **Bar setups** in the talent window's footer, the **Bar setups** button in `
 3. Change talents through OctoWoW, arrange the second setup, and save it under another name.
 4. After changing specs, click **Apply** beside the matching saved setup. No UI reload is needed.
 
+**0.3.2 / zAPI 3.5 fixes Apply doing nothing:** earlier DLLs replayed a login staging message without updating live action slots. The fixed DLL restores and verifies the live slots, including spells and macro buttons. Existing saved setups can be applied without saving them again. Fully restart after updating the DLL; `/reload` cannot replace it.
+
 Each character has its own named setups. They contain **all 120 action slots**, including hidden/stance pages, the keys assigned to each command, and the four stock multibar visibility flags. Applying writes character-specific bindings inside the isolated clone, leaving other characters' shared binding cache alone. Talent points, addon frame positions, pfUI bar styling, pet-bar arrangements, and macro text are outside these snapshots. Macro buttons keep their slot references to the current macros; keep those macros available when using a saved setup.
 
 Select a name to **Update selected**, **Rename**, or **Delete selected**. Update and Delete require a second click in the panel. Existing/deleted snapshots are retained in local backups. **Undo switch** restores the unsaved bars and bindings captured just before the most recent Apply attempt; applying Undo does not replace that backup.
 
 Switching is manual and does not detect or change OctoWoW specs. Controls are unavailable during combat, while holding an item/spell on the cursor, or for Default accounts. Saved snapshots are flushed immediately by the DLL, so saving does not depend on logging out. Later edits are not written back into a named snapshot until you choose Update. The normal isolated action checkpoint still tracks bar edits.
 
-**Updating from 0.1.0/0.2.0:** update this addon and install the shared **zAPI.dll 3.2+** as described above. Replace the `zProfilesNative.dll` loader entry with `zAPI.dll` first in `dlls.txt`; retain `WTF/zProfiles`. Existing isolated profiles, named setups and Undo remain compatible. Character/account **Revert** keeps named setups and Undo separately.
+**Updating from 0.1.0/0.2.0:** update this addon and install the shared **zAPI.dll 3.5+** as described above. Replace the `zProfilesNative.dll` loader entry with `zAPI.dll` first in `dlls.txt`; retain `WTF/zProfiles`. Existing isolated profiles, named setups and Undo remain compatible. Character/account **Revert** keeps named setups and Undo separately.
 
 ## What is isolated
 
@@ -62,7 +64,7 @@ WoW may keep unsaved macro, binding, or addon changes only in memory. Those *iso
 
 **Revert account** restores the entire original local account directory, including shared macros, shared bindings, and every character's local files. Existing local action-bar checkpoints are reset to their official baselines.
 
-Reverting the current character also replays official action bars locally and reloads the UI so native macro/binding state and addon layouts load from the restored files. Old UI file saves and settings packets are discarded during this reload. Previous isolated files and bar checkpoints are retained in `WTF/zProfiles/backups`.
+Reverting the current character also restores the official live action slots and reloads the UI so native macro/binding state and addon layouts load from the restored files. Old UI file saves and settings packets are discarded during this reload. Previous isolated files and bar checkpoints are retained in `WTF/zProfiles/backups`.
 
 "Official" files mean the unmodified local account files on this installation. zProfiles cannot retrieve another computer's addon files or macros that were never cached here. Official action bars are refreshed at each character login. For an unvisited character, the next login seeds its bars from the server.
 
