@@ -6,5 +6,5 @@ $taskFiles = @('Core.lua','Options.lua','Pie.lua','Setups.lua','SetupUI.lua','z_
 $taskStage = Join-Path $taskDist ('package-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path (Join-Path $taskStage 'z_Profiles') -Force | Out-Null
 foreach ($taskFile in $taskFiles) { Copy-Item -LiteralPath $taskFile -Destination (Join-Path $taskStage 'z_Profiles') -Recurse -Force }
-Compress-Archive -LiteralPath (Join-Path $taskStage 'z_Profiles') -DestinationPath (Join-Path $taskDist 'zProfiles-0.4.0.zip') -Force
-Write-Output 'Packaged zProfiles 0.4.0. Install zAPI.dll separately: https://github.com/zabuu/zAPI#installation'
+Compress-Archive -LiteralPath (Join-Path $taskStage 'z_Profiles') -DestinationPath (Join-Path $taskDist 'zProfiles-0.4.1.zip') -Force
+Write-Output 'Packaged zProfiles 0.4.1. Install zAPI.dll separately: https://github.com/zabuu/zAPI#installation'

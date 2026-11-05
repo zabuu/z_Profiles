@@ -109,6 +109,7 @@ function Z:SaveSetup(name, update)
   if ok == 1 then self.selectedSetup = name end
   self:RefreshSetups()
   self:SetupNotice(message)
+  return ok == 1
 end
 
 function Z:ApplySetup(name, undo)
@@ -162,6 +163,7 @@ function Z:RenameSetup(name)
   local ok, message = self:Call("renameSetup", self.selectedSetup, name)
   if ok == 1 then self.selectedSetup = name end
   self:RefreshSetups(); self:SetupNotice(message)
+  return ok == 1
 end
 
 function Z:DeleteSetup()

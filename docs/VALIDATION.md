@@ -39,6 +39,12 @@ Setup Lua tests cover binding swaps without key collisions, both assigned keys, 
 
 ## Remaining live checks
 
+Version 0.4.1 passes 48 Lua tests, including selection-before-Apply, inline save
+and rename, duplicate-name recovery, confirmation, empty-state creation,
+pagination, edge-aware docking, attached/standalone dragging, long names and
+fade cleanup. Offline renders of list, menu, editor, empty and unavailable
+states were visually checked. Live-game inspection was not performed.
+
 The 0.4.0 update passes 38 Lua tests, including the installed zPie runtime, and
 157 native profile checks. New coverage includes sparse/empty ring slots,
 extra rings, macro index changes and missing macros, preserved appearance and
@@ -57,7 +63,7 @@ Use a disposable test account before relying on this release:
 7. Revert the account. Verify shared macros/bindings and all local character layouts reset; previous isolated copies remain in backups.
 8. Exercise the installed SuperWoW, ClassicAPI, Nampower, VanillaHelpers, and zAPI stack. Verify the shared zAPI.dll loads first and no later mod bypasses its settings/file boundary.
 9. Switch accounts, realms, reload UI, zone, and return to character select. Default accounts must retain normal behavior, and isolated accounts must remain isolated.
-10. Open talents before and after `/zp bars`. Check the Bar setups tab with stock and pfUI talent skins, parent hiding, dragging, small resolutions and UI scaling.
+10. Open talents before and after `/zp bars`. Check the Setups sidebar with stock and pfUI talent skins, parent hiding, standalone dragging, left docking near the screen edge, small resolutions and UI scaling.
 11. Save two setups with different primary/secondary bindings, empty slots, macros, items, spell ranks, stance pages and stock bar visibility. Change specs through OctoWoW and manually Apply each setup. Verify the correct spells/icons/bindings and third-party bar refresh without a reload. Recheck that bindings persist after a character relog and other characters retain shared account bindings.
 12. Exercise Update, Rename, Delete and Undo. Make an unsaved edit before switching, then Undo and verify it returns. Revert the character/account and confirm named setups still exist separately. Force-close after Save, restart, and apply the saved snapshot. Confirm Default, combat and occupied-cursor guards.
 13. With zPie enabled, save two setups with different spell/macro/item assignments, empty slots, raid markers and extra rings. Apply each and Undo without reloading. Check the actual ring actions and zPie options preview, preserved ring appearance, and recovery after a restart. Update an old setup to add ring slots; applying an old setup before Update must leave the rings alone.

@@ -181,7 +181,7 @@ class SetupTests(unittest.TestCase):
         lua = self.lua()
         lua.execute("for i=1,7 do zProfiles:SaveSetup('Setup '..i) end; zProfiles:ToggleSetups(); Click(zProfiles.setupNext)")
         self.assertEqual(lua.eval('zProfiles.setupRows[1].setupName'), 'Setup 6')
-        lua.execute("Click(zProfiles.setupRows[1]); zProfiles.setupNameInput:SetText('Fire'); Click(zProfiles.setupRename)")
+        lua.execute("Click(zProfiles.setupRows[1]); Click(zProfiles.setupMore); Click(zProfiles.setupRename); zProfiles.setupNameInput:SetText('Fire'); Click(zProfiles.setupSave)")
         self.assertEqual(lua.eval('zProfiles.selectedSetup'), 'Fire')
         self.assertIsNotNone(lua.eval('setups.Fire'))
         self.assertIsNone(lua.eval('setups["Setup 6"]'))

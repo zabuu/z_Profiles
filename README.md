@@ -2,7 +2,7 @@
 
 Local account profiles for the audited Windows 10/11 x86 OctoWoW / WoW 1.12.1.5875 client.
 
-**0.4.0 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
+**0.4.1 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
 
 ## Installation
 
@@ -23,12 +23,14 @@ The panel lists account directories visible on this installation, then their loc
 
 ## Talent / bar setups
 
-Use **Bar setups** in the talent window's footer, the **Bar setups** button in `/zp`, or `/zp bars`. The talent button uses the stock window's colors and a small spellbook icon, adopts pfUI's button skin when available, and stays highlighted while its panel is open. The compact panel follows the talent window; opening it with the slash command gives you a movable standalone panel.
+Use **Setups** in the talent window's footer, the **Bar setups** button in `/zp`, or `/zp bars`. The talent button expands a slim, 168-unit sidebar attached to the visible talent-window edge. It matches the window's height with stock and pfUI skins, follows it when moved, and can open on the left when the right edge has insufficient room. `/zp bars` opens the same sidebar as a movable standalone panel.
+
+Select a setup, then use the single **Apply** button. The selection stripe shows which setup will be applied; the small dot marks the last applied setup. **+** opens the name field for a new save. **...** contains **Update saved setup**, **Rename...** and **Delete...**, with a second click required for Update/Delete. **Undo last switch** stays below Apply. Pages appear only when needed; the mouse wheel also changes pages. Long names and full status messages are available in tooltips. The sidebar uses a short opening fade and no idle animation loop.
 
 1. On an **isolated** character, arrange your bars, bindings and zPie ring slots for one spec.
-2. Enter a name such as `Frost`, `Fire`, `Tank`, or `Healing`, then choose **Save new**.
+2. Choose **+**, enter a name such as `Frost`, `Fire`, `Tank`, or `Healing`, then choose **Save setup**. The empty panel also provides a **Save setup** button.
 3. Change talents through OctoWoW, arrange the second setup, and save it under another name.
-4. After changing specs, click **Apply** beside the matching saved setup. No UI reload is needed.
+4. After changing specs, select the matching setup and click **Apply**. No UI reload is needed.
 
 **0.3.2 / zAPI 3.5 fixes Apply doing nothing:** earlier DLLs replayed a login staging message without updating live action slots. The fixed DLL restores and verifies the live slots, including spells and macro buttons. Existing saved setups can be applied without saving them again. Fully restart after updating the DLL; `/reload` cannot replace it.
 
@@ -36,9 +38,11 @@ Each character has its own named setups. They contain **all 120 action slots**, 
 
 **zPie ring slots (0.4.0 / zAPI 3.6):** when zPie is enabled, Save and Update also capture the assignments in all eight slots of every ring, including extra rings and empty slots. Apply restores spells, items, normal macros, SuperMacros and raid markers immediately. Macro assignments resolve by name; keep the referenced macro definitions available. Ring names, size, position, appearance and zPie's own saved profiles keep their current settings. Rings created after saving keep their layout but have their assignments cleared when applying that snapshot.
 
-Older setups leave zPie alone. Arrange the desired ring slots and choose **Update selected** to add them to an existing setup. Saving with zPie disabled also leaves rings unspecified. Applying a setup containing ring slots requires zPie to be enabled and initialized; close any open ring or pending ring action first.
+Older setups leave zPie alone. Arrange the desired ring slots and choose **... > Update saved setup** to add them to an existing setup. Saving with zPie disabled also leaves rings unspecified. Applying a setup containing ring slots requires zPie to be enabled and initialized; close any open ring or pending ring action first.
 
-Select a name to **Update selected**, **Rename**, or **Delete selected**. Update and Delete require a second click in the panel. Existing/deleted snapshots are retained in local backups. **Undo switch** restores the unsaved bars, bindings and zPie ring assignments captured just before the most recent Apply attempt; applying Undo does not replace that backup. Saved ring assignments are flushed with the snapshot and survive a crash without waiting for addon SavedVariables or logout.
+Select a name and open **...** to update, rename or delete it. Update and Delete require a second click in the menu. Existing/deleted snapshots are retained in local backups. **Undo last switch** restores the unsaved bars, bindings and zPie ring assignments captured just before the most recent Apply attempt; applying Undo does not replace that backup. Saved ring assignments are flushed with the snapshot and survive a crash without waiting for addon SavedVariables or logout.
+
+**Updating from 0.4.0:** this sidebar update uses the same zAPI 3.6 DLL. Run `/reload` after updating the addon files.
 
 Switching is manual and does not detect or change OctoWoW specs. Controls are unavailable during combat, while holding an item/spell on the cursor, or for Default accounts. Saved snapshots are flushed immediately by the DLL, so saving does not depend on logging out. Later edits are not written back into a named snapshot until you choose Update. The normal isolated action checkpoint still tracks bar edits.
 

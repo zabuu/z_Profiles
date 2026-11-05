@@ -11,7 +11,37 @@ frames, messages, calls = {}, {}, {}
 reloads, barUpdates = 0, 0
 UISpecialFrames, SlashCmdList = {}, {}
 local methods = {}
-function methods:SetText(text) self.text = text end
+function methods:SetText(text)
+  self.text = text
+  if rawget(self,'fontString') then self.fontString.text = text end
+end
+function methods:SetFontString(label) self.fontString = label end
+function methods:SetFont(path,size,style) self.font = {path,size,style} end
+function methods:GetStringWidth() return string.len(self.text or '') * ((rawget(self,'font') or {})[2] or 12) * .5 end
+function methods:SetTextColor(...) self.color = {...} end
+function methods:SetTexture(...) self.texture = {...} end
+function methods:SetVertexColor(...) self.vertexColor = {...} end
+function methods:SetBackdrop(backdrop) self.backdropInfo = backdrop end
+function methods:SetBackdropColor(...) self.background = {...} end
+function methods:SetBackdropBorderColor(...) self.borderColor = {...} end
+function methods:SetAlpha(alpha) self.alpha = alpha end
+function methods:GetAlpha() return rawget(self,'alpha') or 1 end
+function methods:GetFrameLevel()
+  if rawget(self,'level') then return self.level end
+  local parent = rawget(self,'parent')
+  return parent and parent:GetFrameLevel() + ((self.kind=='FontString' or self.kind=='Texture') and 0 or 1) or 1
+end
+function methods:SetFrameLevel(level) self.level = level end
+function methods:GetWidth() return rawget(self,'width') end
+function methods:GetHeight() return rawget(self,'height') end
+function methods:GetRight() return rawget(self,'right') end
+function methods:GetEffectiveScale() return rawget(self,'scale') or 1 end
+function methods:SetFocus() self.focused = true end
+function methods:ClearFocus() self.focused = false end
+function methods:StartMoving() self.moving = true end
+function methods:StopMovingOrSizing() self.moving = false end
+function methods:SetAllPoints(target) self.allPoints = target end
+function methods:SetJustifyH(value) self.justify = value end
 function methods:SetWidth(width) self.width = width end
 function methods:SetHeight(height) self.height = height end
 function methods:SetScript(name, fn) self.scripts[name] = fn end
@@ -38,10 +68,22 @@ function methods:Disable() self.enabled = false end
 function methods:GetText() return self.text or '' end
 function methods:SetParent(parent) self.parent = parent end
 function methods:GetParent() return rawget(self,'parent') end
-function methods:SetPoint(...) self.point = {...} end
-function methods:CreateFontString() return CreateFrame('FontString') end
-function methods:CreateTexture() return CreateFrame('Texture') end
-local metatable = {__index = function(t,k) return methods[k] or function() end end}
+function methods:ClearAllPoints() self.points = {}; self.point = nil end
+function methods:SetPoint(...)
+  self.point = {...}
+  if not rawget(self,'points') then self.points = {} end
+  table.insert(self.points,self.point)
+end
+function methods:CreateFontString() return CreateFrame('FontString',nil,self) end
+function methods:CreateTexture() return CreateFrame('Texture',nil,self) end
+function methods:SetHighlightTexture(path)
+  self.highlightTexture = self:CreateTexture(); self.highlightTexture:SetTexture(path)
+end
+function methods:GetHighlightTexture() return rawget(self,'highlightTexture') end
+local metatable = {__index = function(t,k)
+  if methods[k] then return methods[k] end
+  if string.find(k,'^[A-Z]') then return function() end end
+end}
 function CreateFrame(kind,name,parent,template)
   local frame = setmetatable({kind=kind,name=name,parent=parent,scripts={},enabled=true,shown=true},metatable)
   table.insert(frames,frame)

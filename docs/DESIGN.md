@@ -4,6 +4,23 @@ The native implementation now lives in [zabuu/zAPI](https://github.com/zabuu/zAP
 
 The Lua addon is a controller and account/character browser. `zProfilesNative(command, ...)` exposes versioned operations returning primitive values. It never executes Lua supplied from disk or by another client.
 
+## Setup sidebar
+
+The 0.4.1 setup UI uses a 168-unit dock, aligned to the visible talent frame's
+top and bottom edges. A single selection and Apply action establish a clear
+hierarchy. New/Rename open a focused inline editor; Update/Delete are disclosed
+through the overflow menu and retain two-click confirmation. Empty, unavailable,
+selected and last-applied states are distinct. Long labels fit by measuring the
+actual font width; tooltips retain the full name/status. A 120 ms opening fade
+removes its update handler on completion or hide. There is no persistent UI
+polling, new artwork or native dependency.
+
+The design draws on Apple's [layout](https://developer.apple.com/design/human-interface-guidelines/layout),
+[buttons](https://developer.apple.com/design/human-interface-guidelines/buttons),
+and [sidebars](https://developer.apple.com/design/human-interface-guidelines/sidebars)
+guidance: clear action hierarchy, concise labels, consistent spacing and
+progressive disclosure. It uses WoW's own frames and font/texture facilities.
+
 ## Mount lifecycle
 
 `Load` runs synchronously through VanillaFixes before game initialization. It verifies the client, loads `modes.txt`, installs the whole hook set, and then permits startup. Failure terminates startup rather than allowing configured accounts to upload settings unprotected.
