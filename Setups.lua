@@ -64,8 +64,9 @@ function Z:ReplaceBindings(text)
 end
 
 function Z:SetupsReady()
-  if not self:Available() or self:Call("setupVersion") ~= 1 or self:Call("liveBarsVersion") ~= 1 then
-    return nil, "Install zAPI.dll 3.5+ from github.com/zabuu/zAPI beside WoW.exe, then fully restart."
+  if not self:Available() or self:Call("setupVersion") ~= 1 or self:Call("liveBarsVersion") ~= 1 or
+     self:Call("setupExtrasVersion") ~= 1 then
+    return nil, "Install zAPI.dll 3.6+ from github.com/zabuu/zAPI beside WoW.exe, then fully restart."
   end
   local account, active, configured, problem = self:Call("status")
   if active ~= "isolated" then return nil, "Choose Isolate for this account in /zp, then fully restart WoW." end
@@ -102,9 +103,9 @@ end
 function Z:SaveSetup(name, update)
   local ready, reason = self:SetupsReady()
   if not ready then self:SetupNotice(reason); return end
-  local captured, bindings = pcall(function() return Z:CaptureBindings() end)
+  local captured, bindings, pie = pcall(function() return Z:CaptureBindings(), Z:CapturePie() end)
   if not captured then self:SetupNotice(tostring(bindings)); return end
-  local ok, message = self:Call(update and "updateSetup" or "saveSetup", name, bindings)
+  local ok, message = self:Call(update and "updateSetup" or "saveSetup", name, bindings, pie)
   if ok == 1 then self.selectedSetup = name end
   self:RefreshSetups()
   self:SetupNotice(message)
@@ -113,34 +114,43 @@ end
 function Z:ApplySetup(name, undo)
   local ready, reason = self:SetupsReady()
   if not ready then self:SetupNotice(reason); return end
-  local ok, target = self:Call(undo and "setupUndoBindings" or "setupBindings", name or "")
+  local ok, target, targetPie = self:Call(undo and "setupUndoBindings" or "setupBindings", name or "")
   if ok ~= 1 then self:SetupNotice(target); return end
-  local valid, errorText = pcall(function() Z:ParseBindings(target) end)
-  if not valid then self:SetupNotice(tostring(errorText)); return end
-  local captured, previous = pcall(function() return Z:CaptureBindings() end)
+  local valid, pieSnapshot = pcall(function()
+    Z:ParseBindings(target)
+    local snapshot = Z:ParsePie(targetPie)
+    Z:CheckPie(snapshot)
+    return snapshot
+  end)
+  if not valid then self:SetupNotice(tostring(pieSnapshot)); return end
+  local captured, previous, previousPie = pcall(function() return Z:CaptureBindings(), Z:CapturePie() end)
   if not captured then self:SetupNotice(tostring(previous)); return end
   local bindingSet = GetCurrentBindingSet()
   if not undo then
-    local saved, message = self:Call("saveSetupUndo", "", previous)
+    local saved, message = self:Call("saveSetupUndo", "", previous, previousPie)
     if saved ~= 1 then self:SetupNotice(message); return end
   end
   local changed, problem = pcall(function()
     Z:ReplaceBindings(target)
+    Z:ReplacePie(pieSnapshot)
     -- Setups are character scoped. This writes only the isolated character's
     -- cache and avoids changing shared bindings for other characters.
     SaveBindings(2)
   end)
   local applied, message
-  if changed then applied, message = self:Call(undo and "applySetupUndo" or "applySetup", name or "", target) end
+  if changed then applied, message = self:Call(undo and "applySetupUndo" or "applySetup", name or "", target, targetPie or "") end
   if not changed or applied ~= 1 then
+    local pieRestored, pieError = pcall(function() Z:ReplacePie(Z:ParsePie(previousPie)) end)
     local restored, restoreError = pcall(function() Z:ReplaceBindings(previous); SaveBindings(bindingSet) end)
     self:RefreshSetups()
     self:SetupNotice("Could not apply setup: " .. tostring(problem or message) ..
-      (restored and " Previous bindings restored." or " Binding restore failed: " .. tostring(restoreError)))
+      (restored and " Previous bindings restored." or " Binding restore failed: " .. tostring(restoreError)) ..
+      (pieRestored and "" or " Ring restore failed: " .. tostring(pieError)))
     return
   end
   if MultiActionBar_Update then MultiActionBar_Update() end
   self.lastAppliedSetup = undo and "Previous setup (Undo)" or name
+  if not pieSnapshot and zPie then message = message .. " No ring slots saved; Update this setup to include zPie." end
   self:RefreshSetups()
   self:SetupNotice(message)
   self:Message(message)

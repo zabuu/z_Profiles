@@ -39,6 +39,13 @@ Setup Lua tests cover binding swaps without key collisions, both assigned keys, 
 
 ## Remaining live checks
 
+The 0.4.0 update passes 38 Lua tests, including the installed zPie runtime, and
+157 native profile checks. New coverage includes sparse/empty ring slots,
+extra rings, macro index changes and missing macros, preserved appearance and
+profile tables, Undo, native/binding/refresh rollback, disabled or busy zPie,
+legacy setups, corrupt payloads, version-2 length bounds and ring snapshots
+surviving forced termination. Gameplay verification remains separate.
+
 Use a disposable test account before relying on this release:
 
 1. Start with the configured VanillaFixes loader; confirm `/zp` reports the native layer and Default accounts behave normally.
@@ -53,5 +60,6 @@ Use a disposable test account before relying on this release:
 10. Open talents before and after `/zp bars`. Check the Bar setups tab with stock and pfUI talent skins, parent hiding, dragging, small resolutions and UI scaling.
 11. Save two setups with different primary/secondary bindings, empty slots, macros, items, spell ranks, stance pages and stock bar visibility. Change specs through OctoWoW and manually Apply each setup. Verify the correct spells/icons/bindings and third-party bar refresh without a reload. Recheck that bindings persist after a character relog and other characters retain shared account bindings.
 12. Exercise Update, Rename, Delete and Undo. Make an unsaved edit before switching, then Undo and verify it returns. Revert the character/account and confirm named setups still exist separately. Force-close after Save, restart, and apply the saved snapshot. Confirm Default, combat and occupied-cursor guards.
+13. With zPie enabled, save two setups with different spell/macro/item assignments, empty slots, raid markers and extra rings. Apply each and Undo without reloading. Check the actual ring actions and zPie options preview, preserved ring appearance, and recovery after a restart. Update an old setup to add ring slots; applying an old setup before Update must leave the rings alone.
 
 These live checks have not been marked as completed by the offline suites. This release does not claim universal crash-proof coverage for untested client variants, native mods, arbitrary server state, or launching without the DLL.

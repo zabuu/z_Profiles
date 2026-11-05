@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MOCK = r'''
 state.active, state.desired = 'isolated', 'isolated'
 state.setupVersion, state.liveBarsVersion, state.combat, state.cursor = 1, 1, false, false
+state.setupExtrasVersion = 1
 setups, currentBars, undoSetup, lastSavedSet = {}, 'Frost bars', nil, 1
 bindingCommands = {'HEADER_TEST','MOVEFORWARD','ACTIONBUTTON1','SPELL Frostbolt'}
 bindings = {W='MOVEFORWARD', ['1']='ACTIONBUTTON1', ['SHIFT-1']='ACTIONBUTTON1', ['CTRL-F']='SPELL Frostbolt'}
@@ -40,6 +41,7 @@ local originalNative = Native
 function Native(command,a,b,c)
   if command == 'setupVersion' then return state.setupVersion end
   if command == 'liveBarsVersion' then return state.liveBarsVersion end
+  if command == 'setupExtrasVersion' then return state.setupExtrasVersion end
   if command == 'setups' then
     local names = {}
     for name in pairs(setups) do table.insert(names,name) end
@@ -47,7 +49,7 @@ function Native(command,a,b,c)
     return table.concat(names,'\n'), undoSetup and 1 or 0
   end
   if command == 'saveSetup' or command == 'updateSetup' or command == 'saveSetupUndo' then
-    local value = {bindings=b,bars=currentBars}
+    local value = {bindings=b,bars=currentBars,pie=c or ''}
     if command == 'saveSetupUndo' then undoSetup=value
     else
       if command == 'saveSetup' and setups[a] then return 0,'Name exists' end
@@ -58,12 +60,13 @@ function Native(command,a,b,c)
   if command == 'setupBindings' or command == 'setupUndoBindings' then
     local value = command == 'setupUndoBindings' and undoSetup or setups[a]
     if not value then return 0,'Missing setup' end
-    return 1,value.bindings
+    return 1,value.bindings,value.pie
   end
   if command == 'applySetup' or command == 'applySetupUndo' then
     if state.applyFailure then return 0,'Native apply failed' end
     local value = command == 'applySetupUndo' and undoSetup or setups[a]
     assert(value.bindings == b)
+    assert((value.pie or '') == (c or ''))
     currentBars = value.bars
     return 1,'Applied '..a
   end
@@ -80,7 +83,7 @@ class SetupTests(unittest.TestCase):
     def lua(self):
         lua = LuaRuntime(unpack_returned_tuples=True)
         lua.execute(BOOTSTRAP + MOCK)
-        for name in ('Core.lua', 'Options.lua', 'Setups.lua', 'SetupUI.lua'):
+        for name in ('Core.lua', 'Options.lua', 'Pie.lua', 'Setups.lua', 'SetupUI.lua'):
             lua.execute((ROOT / name).read_text(encoding='utf-8'))
         return lua
 
@@ -143,7 +146,7 @@ class SetupTests(unittest.TestCase):
 
     def test_default_combat_cursor_old_backend_and_fault_block_mutations(self):
         for expression in ('state.active="default"', 'state.combat=true', 'state.cursor=true',
-                           'state.setupVersion=0', 'state.liveBarsVersion=0', 'state.problem="checkpoint failed"'):
+                           'state.setupVersion=0', 'state.liveBarsVersion=0', 'state.setupExtrasVersion=0', 'state.problem="checkpoint failed"'):
             with self.subTest(expression=expression):
                 lua = self.lua()
                 lua.execute(expression + '; zProfiles:SaveSetup("Blocked"); zProfiles:ToggleSetups()')

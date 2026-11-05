@@ -2,12 +2,12 @@
 
 Local account profiles for the audited Windows 10/11 x86 OctoWoW / WoW 1.12.1.5875 client.
 
-**0.3.2 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
+**0.4.0 is experimental. Native file/network tests and Lua controller tests are provided. Live character login, addon interoperability, and cross-computer server verification are still required before relying on it with an important account.**
 
 ## Installation
 
 1. Put the addon folder in `Interface/AddOns/z_Profiles`, or clone this repository there. Enable **zProfiles** in the AddOns menu.
-2. Install **[zAPI.dll 3.5 or later](https://github.com/zabuu/zAPI#installation)** separately. Download **`zAPI.dll`** from that repository's **`bin`** folder and copy it into your main WoW folder, beside `WoW.exe` and `VanillaFixes.exe`.
+2. Install **[zAPI.dll 3.6 or later](https://github.com/zabuu/zAPI#installation)** separately. Download **`zAPI.dll`** from that repository's **`bin`** folder and copy it into your main WoW folder, beside `WoW.exe` and `VanillaFixes.exe`.
 3. Open **`dlls.txt`** in that main WoW folder. Put **`zAPI.dll`** first, exactly once, and preserve your other DLL entries below it. Remove the old **`zProfilesNative.dll`** line if upgrading. The shared zAPI includes profile protection; do not load both DLLs.
 4. Fully restart through **VanillaFixes.exe**. `/reload` cannot load a new DLL. Installing an addon through Git or an addon manager does not install this DLL or edit `dlls.txt`.
 
@@ -25,7 +25,7 @@ The panel lists account directories visible on this installation, then their loc
 
 Use **Bar setups** in the talent window's footer, the **Bar setups** button in `/zp`, or `/zp bars`. The talent button uses the stock window's colors and a small spellbook icon, adopts pfUI's button skin when available, and stays highlighted while its panel is open. The compact panel follows the talent window; opening it with the slash command gives you a movable standalone panel.
 
-1. On an **isolated** character, arrange your bars and bindings for one spec.
+1. On an **isolated** character, arrange your bars, bindings and zPie ring slots for one spec.
 2. Enter a name such as `Frost`, `Fire`, `Tank`, or `Healing`, then choose **Save new**.
 3. Change talents through OctoWoW, arrange the second setup, and save it under another name.
 4. After changing specs, click **Apply** beside the matching saved setup. No UI reload is needed.
@@ -34,11 +34,15 @@ Use **Bar setups** in the talent window's footer, the **Bar setups** button in `
 
 Each character has its own named setups. They contain **all 120 action slots**, including hidden/stance pages, the keys assigned to each command, and the four stock multibar visibility flags. Applying writes character-specific bindings inside the isolated clone, leaving other characters' shared binding cache alone. Talent points, addon frame positions, pfUI bar styling, pet-bar arrangements, and macro text are outside these snapshots. Macro buttons keep their slot references to the current macros; keep those macros available when using a saved setup.
 
-Select a name to **Update selected**, **Rename**, or **Delete selected**. Update and Delete require a second click in the panel. Existing/deleted snapshots are retained in local backups. **Undo switch** restores the unsaved bars and bindings captured just before the most recent Apply attempt; applying Undo does not replace that backup.
+**zPie ring slots (0.4.0 / zAPI 3.6):** when zPie is enabled, Save and Update also capture the assignments in all eight slots of every ring, including extra rings and empty slots. Apply restores spells, items, normal macros, SuperMacros and raid markers immediately. Macro assignments resolve by name; keep the referenced macro definitions available. Ring names, size, position, appearance and zPie's own saved profiles keep their current settings. Rings created after saving keep their layout but have their assignments cleared when applying that snapshot.
+
+Older setups leave zPie alone. Arrange the desired ring slots and choose **Update selected** to add them to an existing setup. Saving with zPie disabled also leaves rings unspecified. Applying a setup containing ring slots requires zPie to be enabled and initialized; close any open ring or pending ring action first.
+
+Select a name to **Update selected**, **Rename**, or **Delete selected**. Update and Delete require a second click in the panel. Existing/deleted snapshots are retained in local backups. **Undo switch** restores the unsaved bars, bindings and zPie ring assignments captured just before the most recent Apply attempt; applying Undo does not replace that backup. Saved ring assignments are flushed with the snapshot and survive a crash without waiting for addon SavedVariables or logout.
 
 Switching is manual and does not detect or change OctoWoW specs. Controls are unavailable during combat, while holding an item/spell on the cursor, or for Default accounts. Saved snapshots are flushed immediately by the DLL, so saving does not depend on logging out. Later edits are not written back into a named snapshot until you choose Update. The normal isolated action checkpoint still tracks bar edits.
 
-**Updating from 0.1.0/0.2.0:** update this addon and install the shared **zAPI.dll 3.5+** as described above. Replace the `zProfilesNative.dll` loader entry with `zAPI.dll` first in `dlls.txt`; retain `WTF/zProfiles`. Existing isolated profiles, named setups and Undo remain compatible. Character/account **Revert** keeps named setups and Undo separately.
+**Updating:** update this addon and install the shared **zAPI.dll 3.6+** as described above. Replace any old `zProfilesNative.dll` loader entry with `zAPI.dll` first in `dlls.txt`; retain `WTF/zProfiles`. Existing isolated profiles, named setups and Undo remain compatible. Character/account **Revert** keeps named setups and Undo separately.
 
 ## What is isolated
 
@@ -72,9 +76,10 @@ its own changes across reloads and logins. It does not re-import or overwrite
 addon settings on every login. Changes made in the original files while using
 Default mode do not automatically merge into an existing isolated clone.
 
-Named zProfiles bar setups contain action slots and keybindings. Applying one
-does not select, reset, or restore another addon's profile. Use that addon's
-profile selector for its settings. Account/character **Revert** does restore
+Named zProfiles setups contain action slots, keybindings and optional zPie ring
+assignments. Applying one updates the captured ring slots without switching
+zPie's own saved profile or restoring its appearance settings. Other addons
+continue to use their own profile selectors. Account/character **Revert** restores
 the corresponding cloned files, including addon settings in that scope.
 
 ## Revert

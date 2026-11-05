@@ -50,9 +50,11 @@ The audited ReloadUI teardown saves and destroys native macro state and destroys
 
 The latest original directory supplies file baselines. Official action-slot baselines are the server arrays received on login. These are intentionally distinct sources: arbitrary addon files from a different computer are not available to a client addon.
 
-## Named setup lifecycle (0.2.0)
+## Named setup lifecycle
 
-The original bridge version remains 1; `setupVersion` advertises the setup contract independently, and `liveBarsVersion` identifies verified live-slot capture/restoration. An old DLL can still protect accounts while the updated Lua panel directs the user to replace it before using setups.
+The original bridge version remains 1; `setupVersion` advertises the setup contract independently, `liveBarsVersion` identifies verified live-slot capture/restoration, and `setupExtrasVersion` advertises persisted zPie slot payloads. An old DLL can still protect accounts while the updated Lua panel directs the user to replace it before using setups.
+
+Version-1 snapshots remain readable and leave zPie unchanged. Version-2 snapshots add a length-delimited binding section followed by a bounded `ZPR1` ring/slot payload under the same checksum and atomic write. The Lua adapter validates ring indices, sparse slots, allowed action kinds and hex-encoded strings before any mutation. It captures assignments, not zPie's layout, profile collection or macro definitions. Save and Undo pass the live ring payload as the fourth native argument. Loading returns it as the third result, and Apply verifies it still matches the file. Lua restores previous ring slots and bindings if its refresh/save or native bar application fails. Macro names are resolved again on Apply instead of trusting a stale index.
 
 Setups are scoped to the authenticated account and current character GUID at `WTF/zProfiles/setups/<ACCOUNT>/<GUID>/<name>.zps`. Names are restricted to 1-32 letters, numbers, spaces, hyphens and underscores; device names, path separators and leading/trailing spaces are rejected. Files contain a versioned header, all 120 raw action slots, a visibility nibble, hex-encoded key/command pairs and a corruption checksum. The checksum detects accidental damage; it is not an authentication mechanism. Reads never execute Lua. Writes flush and atomically replace the snapshot, archiving prior copies. Rename cannot overwrite another setup; Delete archives the file.
 

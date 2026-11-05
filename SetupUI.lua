@@ -107,7 +107,7 @@ function Z:RenderSetups()
   self.setupPage = math.min(self.setupPage or 1, pages)
   self.setupCharacterLabel:SetText(tostring(UnitName("player")) .. "  /  " .. tostring(GetRealmName()))
   self.setupLastLabel:SetText(self.lastAppliedSetup and "Last applied: " .. self.lastAppliedSetup or "Change talents first, then apply the matching setup.")
-  self.setupStatusLabel:SetText(self.setupsReason or self.setupNotice or "Save bindings, all 120 slots and stock bar visibility.\nSelect a setup to update or rename it.")
+  self.setupStatusLabel:SetText(self.setupsReason or self.setupNotice or "Save bindings, bars, visibility and zPie ring slots.\nSelect a setup to update or rename it.")
   local ready = self.setupsReady
   for i, row in ipairs(self.setupRows) do
     local name = names[(self.setupPage - 1) * 5 + i]

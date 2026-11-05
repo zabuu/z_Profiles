@@ -101,7 +101,7 @@ class AddonTests(unittest.TestCase):
         lua.execute(BOOTSTRAP)
         if native:
             lua.execute('zProfilesNative=Native; zAPI=function(command) if command == "profilesVersion" then return 1 end end')
-        for name in ('Core.lua', 'Options.lua', 'Setups.lua', 'SetupUI.lua'):
+        for name in ('Core.lua', 'Options.lua', 'Pie.lua', 'Setups.lua', 'SetupUI.lua'):
             lua.execute((ROOT / name).read_text(encoding='utf-8'))
         return lua
 
@@ -198,7 +198,7 @@ class AddonTests(unittest.TestCase):
         self.assertIn('Checkpoint failed', lua.eval('zProfiles.statusLabel.text'))
 
     def test_uses_lua_50_compatible_constructs(self):
-        for name in ('Core.lua', 'Options.lua', 'Setups.lua', 'SetupUI.lua'):
+        for name in ('Core.lua', 'Options.lua', 'Pie.lua', 'Setups.lua', 'SetupUI.lua'):
             text = (ROOT / name).read_text(encoding='utf-8')
             self.assertNotIn('string.match', text)
             self.assertNotIn('string.gmatch', text)
